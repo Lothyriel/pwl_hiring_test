@@ -52,7 +52,7 @@ pub async fn signin(
     let authenticated =
         verify(user.password, &db_user.password).map_err(ValidationError::InvalidPasswordFormat)?;
 
-    if authenticated {
+    if !authenticated {
         return bail(ValidationError::InvalidCredentials);
     }
 
