@@ -10,7 +10,7 @@ pub trait MemoryRepository {
 
 impl MemoryRepository for Database {
     async fn save(&self, save: InsertSave) -> DbResult<()> {
-        self.collection("Saves").insert_one(save).await?;
+        self.collection("saves").insert_one(save).await?;
 
         Ok(())
     }
@@ -23,14 +23,14 @@ pub trait UserRepository {
 
 impl UserRepository for Database {
     async fn register(&self, user: UserSignup) -> DbResult<()> {
-        self.collection("Users").insert_one(user.hashed()).await?;
+        self.collection("users").insert_one(user.hashed()).await?;
 
         Ok(())
     }
 
     async fn find_user(&self, username: &str) -> DbResult<Option<ReadHashedUser>> {
         let result = self
-            .collection("Users")
+            .collection("users")
             .find_one(doc! { "username": username })
             .await?;
 
