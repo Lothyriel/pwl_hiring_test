@@ -57,7 +57,7 @@ pub async fn db_conn() -> Client {
         .await
         .expect("Failed to connect to mongo instance");
 
-    tracing::info!("MongoDB connected");
+    tracing::debug!("MongoDB connected");
 
     client
 }
@@ -74,9 +74,15 @@ pub enum AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        let code = match self {
-            AppError::Validation(_) => StatusCode::BAD_REQUEST,
-            AppError::IO(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        let code = match &self {
+            AppError::Validation(e) => {
+                tracing::info!("{}", e);
+                StatusCode::BAD_REQUEST
+            }
+            AppError::IO(e) => {
+                tracing::error!("{}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         };
 
         let message = MessageResponse {

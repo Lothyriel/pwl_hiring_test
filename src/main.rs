@@ -36,7 +36,7 @@ async fn main() {
     let app = router(state).layer(cors);
 
     let address = (Ipv4Addr::UNSPECIFIED, 3000);
-    tracing::info!("Server running on {:?}", address);
+    tracing::debug!("Server running on {:?}", address);
 
     let listener = tokio::net::TcpListener::bind(address)
         .await

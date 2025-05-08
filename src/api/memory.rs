@@ -24,7 +24,7 @@ pub async fn save(
     Extension(claims): Extension<UserClaims>,
     Json(save): Json<SaveRequest>,
 ) -> ApiResult<MessageResponse> {
-    tracing::trace!("Received data to save: {:?}", save);
+    tracing::debug!("Received data to save: {:?}", save);
 
     let save = InsertSave {
         user_id: claims.id,
