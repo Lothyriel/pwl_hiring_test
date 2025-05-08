@@ -1,3 +1,4 @@
+use crate::{api::AppState, infra::dto::ReadHashedUser};
 use axum::{
     Json,
     extract::{Request, State},
@@ -5,12 +6,11 @@ use axum::{
     middleware::Next,
     response::IntoResponse,
 };
+use axum_extra::extract::CookieJar;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, errors::Error};
 use mongodb::bson::{oid::ObjectId, serde_helpers::serialize_object_id_as_hex_string};
 use serde_json::json;
-
-use crate::{api::AppState, infra::dto::ReadHashedUser};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct UserClaims {
@@ -37,7 +37,7 @@ pub async fn generate_token(user: ReadHashedUser, secret: &str) -> String {
 
     let claims = JwtPayload {
         data,
-        iss: ISSUER,
+        iss: ISSUER.to_string(),
         exp: (now + Duration::hours(1)).timestamp(),
         nbf: now.timestamp(),
     };
@@ -53,19 +53,15 @@ pub async fn generate_token(user: ReadHashedUser, secret: &str) -> String {
 
 pub async fn auth_middleware(
     State(state): State<AppState>,
+    cookies: CookieJar,
     mut req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, AuthError> {
-    let cookie = req
-        .headers()
-        .get(axum::http::header::COOKIE)
-        .ok_or(AuthError::TokenNotPresent)?;
+    let cookie = cookies.get("token").ok_or(AuthError::TokenNotPresent)?;
 
-    let token = cookie.to_str().map_err(|_| AuthError::TokenNotPresent)?;
+    let claims = decode(state.jwt_secret(), cookie.value()).await?;
 
-    let claims = decode_claims(state.jwt_secret(), token).await?;
-
-    req.extensions_mut().insert(claims);
+    req.extensions_mut().insert(claims.data);
 
     Ok(next.run(req).await)
 }
@@ -78,17 +74,17 @@ impl IntoResponse for AuthError {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 struct JwtPayload {
     data: UserClaims,
     exp: i64,
     nbf: i64,
-    iss: &'static str,
+    iss: String,
 }
 
 const ISSUER: &str = "joao.xavier.api";
 
-async fn decode_claims(secret: &str, token: &str) -> Result<UserClaims, Error> {
+async fn decode(secret: &str, token: &str) -> Result<JwtPayload, Error> {
     let key = DecodingKey::from_secret(secret.as_bytes());
 
     let mut validation = Validation::new(jsonwebtoken::Algorithm::HS256);

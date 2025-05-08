@@ -1,8 +1,10 @@
 mod auth;
 
+use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
+use axum::response::IntoResponse;
 use axum::{Json, extract::State};
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use bcrypt::verify;
-use serde_json::{Value, json};
 
 pub use auth::UserClaims;
 pub use auth::auth_middleware as auth;
@@ -42,7 +44,7 @@ pub async fn signup(
 pub async fn signin(
     State(state): State<AppState>,
     Json(user): Json<UserSignin>,
-) -> ApiResult<Value> {
+) -> Result<impl IntoResponse, AppError> {
     let result = state.db().find_user(&user.username).await?;
 
     let Some(db_user) = result else {
@@ -58,12 +60,21 @@ pub async fn signin(
 
     let token = auth::generate_token(db_user, &state.jwt_secret).await;
 
-    // note: I would not return the userID, the user can request it from a /user endpoint
-    // note: I would not return the token in the body, we should properly set it as a HTTP-only
-    // cookie to avoid XSS attacks
-    let response = json!({"token": token, "userID": user.username});
+    let cookie = Cookie::build(("token", token))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .path("/")
+        .build();
 
-    Ok(Json(response))
+    let mut headers = HeaderMap::new();
+
+    headers.insert(
+        header::SET_COOKIE,
+        HeaderValue::from_str(&cookie.to_string()).unwrap(),
+    );
+
+    Ok((StatusCode::OK, headers).into_response())
 }
 
 fn bail<T>(err: ValidationError) -> Result<T, AppError> {

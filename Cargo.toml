@@ -14,6 +14,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 # http framework
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 axum = "0.8.4"
+axum-extra = { version = "0.10.1", features = ["cookie"] }
 
 # async runtime
 tokio = { version = "1.45", features = ["full"] }
