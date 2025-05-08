@@ -1,7 +1,14 @@
 pub mod memory;
 pub mod user;
 
-use axum::{Json, Router, http::StatusCode, middleware, response::IntoResponse, routing};
+use axum::{
+    Router,
+    extract::{FromRequest, rejection::JsonRejection},
+    http::StatusCode,
+    middleware,
+    response::IntoResponse,
+    routing,
+};
 use mongodb::{Client, Database};
 use user::ValidationError;
 
@@ -105,5 +112,23 @@ impl MessageResponse {
         };
 
         Json(msg)
+    }
+}
+
+impl From<JsonRejection> for AppError {
+    fn from(rejection: JsonRejection) -> Self {
+        let err = ValidationError::InvalidJsonBodyParameters(rejection);
+        AppError::Validation(err)
+    }
+}
+
+#[derive(FromRequest)]
+#[from_request(via(axum::Json), rejection(AppError))]
+pub struct Json<T>(T);
+
+impl<T: serde::Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> axum::response::Response {
+        let Self(value) = self;
+        axum::Json(value).into_response()
     }
 }

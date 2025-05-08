@@ -1,6 +1,8 @@
-use crate::{api::AppState, infra::dto::ReadHashedUser};
+use crate::{
+    api::{AppState, Json},
+    infra::dto::ReadHashedUser,
+};
 use axum::{
-    Json,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,

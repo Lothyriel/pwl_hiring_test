@@ -1,4 +1,4 @@
-use axum::{Extension, Json, extract::State};
+use axum::{Extension, extract::State};
 use chrono::{DateTime, Utc};
 
 use crate::{
@@ -6,7 +6,7 @@ use crate::{
     models::Difficulty,
 };
 
-use super::{ApiResult, AppState, MessageResponse, user::UserClaims};
+use super::{ApiResult, AppState, Json, MessageResponse, user::UserClaims};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SaveRequest {

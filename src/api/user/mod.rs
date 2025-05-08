@@ -1,8 +1,9 @@
 mod auth;
 
+use axum::extract::State;
+use axum::extract::rejection::JsonRejection;
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::{Json, extract::State};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use bcrypt::verify;
 
@@ -14,7 +15,7 @@ use crate::infra::{
     repositories::UserRepository,
 };
 
-use super::{ApiResult, AppError, AppState, MessageResponse};
+use super::{ApiResult, AppError, AppState, Json, MessageResponse};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ValidationError {
@@ -24,6 +25,8 @@ pub enum ValidationError {
     InvalidCredentials,
     #[error("Password in invalid format")]
     InvalidPasswordFormat(#[from] bcrypt::BcryptError),
+    #[error("Invalid json body parameters: {0}")]
+    InvalidJsonBodyParameters(JsonRejection),
 }
 
 pub async fn signup(
