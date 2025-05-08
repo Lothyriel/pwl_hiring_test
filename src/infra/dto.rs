@@ -48,6 +48,7 @@ pub struct InsertHashedUser {
 
 #[derive(serde::Deserialize)]
 pub struct ReadHashedUser {
+    #[serde(rename = "_id")]
     pub id: ObjectId,
     pub username: String,
     pub password: String,

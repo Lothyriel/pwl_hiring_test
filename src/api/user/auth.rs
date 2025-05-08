@@ -7,15 +7,16 @@ use axum::{
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, errors::Error};
-use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{oid::ObjectId, serde_helpers::serialize_object_id_as_hex_string};
 use serde_json::json;
 
 use crate::{api::AppState, infra::dto::ReadHashedUser};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct UserClaims {
-    pub username: String,
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub id: ObjectId,
+    pub username: String,
 }
 
 #[derive(thiserror::Error, Debug)]
