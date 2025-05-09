@@ -18,6 +18,14 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", routing::get(|| async { "Backend server is running" }))
         .nest("/api", api_router(state))
+        .fallback(not_found)
+}
+
+async fn not_found() -> impl IntoResponse {
+    (
+        StatusCode::NOT_FOUND,
+        MessageResponse::new("The requested resource could not be found."),
+    )
 }
 
 fn api_router(state: AppState) -> Router {
